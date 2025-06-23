@@ -16,15 +16,18 @@ public:
     int IVs[5];
     int EVs[5];
 
+    char *species;
+
     int statChanges[6];
 
     status affliction;
 
     int currHP;
+    int maxHP;
 
     int stats[5];
 
-    pokemon()
+    pokemon(int dexNum)
     {
     }
 
@@ -37,5 +40,14 @@ public:
     {
         level++;
         /*increment stats*/
+    }
+
+    void heal()
+    {
+        currHP = maxHP;
+    }
+
+    ~pokemon()
+    {
     }
 };
