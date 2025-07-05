@@ -2,14 +2,6 @@
 #include <cstring>
 #include <vector>
 
-enum status
-{
-      burn,
-      paralyze,
-      poison,
-      freeze,
-};
-
 enum stats
 {
       hp,
@@ -44,6 +36,31 @@ struct type
       }
 };
 
+enum status
+{
+      burn,
+      paralyze,
+      poison,
+      freeze,
+      atk_up,
+      atk_dwn,
+      def_up,
+      def_dwn,
+      speed_up,
+      speed_dwn,
+      spec_up,
+      spec_dwn,
+      acc_up,
+      acc_dwn,
+};
+
+struct move_effect
+{
+      int chance;
+      status change;
+      bool target;
+};
+
 struct move
 {
       int power;
@@ -55,6 +72,7 @@ struct move
       type type;
       bool attacking; // false == status move
       bool physical;  // false == special move
+      move_effect effect;
 };
 
 class pokemon
@@ -86,6 +104,19 @@ class trainer
 {
       pokemon team[6];
 };
+extern pokemon player_active;
+extern pokemon opponent_active;
+void handle_effect(move &mv)
+{
+      if (rand() % 100 > mv.effect.chance)
+      {
+            return;
+      }
+      if (mv.effect.target) // i have decided that true = opp and false = user
+      {
+            (mv.effect.target ? opponent_active : player_active).apply_status(mv.effect.change);
+      }
+}
 
 int damage_calculation(pokemon &attacker, pokemon &defender, move &mv) // weird formatting here is due to my formatter hating really lengthy equations
 {
@@ -100,7 +131,43 @@ int damage_calculation(pokemon &attacker, pokemon &defender, move &mv) // weird 
                    ((defender.type2.type_matchup_incoming[mv.type] == super_effective) ? 2 : (defender.type2.type_matchup_incoming[mv.type] == not_very_effective ? 0.5 : 1)) * (((rand() % (38)) + 217) / 255);
       return damage < 1 ? 1 : damage;
 }
-const char *graphic_tiles[] = {" ", "█", "▒", "░"};
+
+struct item
+{
+};
+
+#define playerUseItem(item) useItem(0, item);
+#define opponentUseItem(item) useItem(1, item);
+bool useItem(bool, item *) {}
+enum moveOutcomes
+{
+      NO_PP,
+      NOEFFECT,
+      MISS,
+      HIT
+};
+int useMove(pokemon &attacker, pokemon &defender, move &mv)
+{
+      if (mv.currPP <= 0)
+      {
+            return NO_PP;
+      }
+      mv.currPP--;
+      if (mv.type.type_matchup_outgoing.at(defender.type1) == immune || mv.type.type_matchup_outgoing.at(defender.type2) == immune)
+      {
+            return NOEFFECT;
+      }
+      if (mv.accuracy < rand() % 101)
+      {
+            return MISS;
+      }
+      if (mv.attacking)
+      {
+            defender.currHP -= damage_calculation(attacker, defender, mv);
+            handle_effect(mv);
+            return HIT;
+      }
+}
 
 // graphic data for every "tile", indexed with their corresponding name
 std::map<char *, std::vector<std::vector<int>>> tile_list = {

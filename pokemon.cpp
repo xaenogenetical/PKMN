@@ -47,6 +47,14 @@ public:
         currHP = maxHP;
     }
 
+    void apply_status(status change)
+    {
+        if (change >= freeze)
+        {
+            affliction = change;
+        }
+    }
+
     ~pokemon()
     {
     }
