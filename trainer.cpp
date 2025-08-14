@@ -4,6 +4,7 @@ class trainer
 {
     char *title = "Pokemon Trainer";
     char *name;
+    bool goodAI;
     pokemon team[6];
     int payout;
     char *startMessage;

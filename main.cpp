@@ -6,12 +6,6 @@
 #define battle_item 2
 #define run 3
 
-#define SCREEN_SIZE_X 160
-#define SCREEN_SIZE_Y 144
-
-#define bit bool
-#define bitstream bit *
-
 bool lame_graphics = 0;
 
 trainer player;
@@ -57,9 +51,10 @@ void battle()
     player_turn();
     // determine enemy move
     // calc turn order
-    bool player_first = player_active.stats[speed] > opponent_active.stats[speed] ? true : (player_active.stats[speed] == opponent_active.stats[speed] ? rand() % 2 : false);
+    bool player_first = player_active.fetchReal(speed) > opponent_active.fetchReal(speed) ? true : (player_active.fetchReal(speed) == opponent_active.fetchReal(speed) ? rand() % 2 : false);
     // execute moves
-
+    int outcome;
+    int runAttempts = 0;
     switch (player_move.selection)
     {
     case (SWITCH):
@@ -71,10 +66,32 @@ void battle()
         if (player_first)
         {
             // use player move
-            useMove(player_active, opponent_active, *(move *)player_move.subject);
+            outcome = useMove(player_active, opponent_active, *(move *)player_move.subject);
+            if (outcome == NO_PP)
+            {
+                std::cout << "NO PP" << std::endl;
+            }
         }
         break;
     case (RUN):
+        if (trainer_battle)
+        {
+            std::cout << "Cannot run away!" << std::endl;
+            // go back to player turn
+        }
+        runAttempts++;
+        if (player_active.fetchReal(speed) < opponent_active.fetchReal(speed))
+        {
+            int oddsEscape = ((player_active.fetchReal(speed) * 32) / ((opponent_active.fetchReal(speed) / 4) % 256)) + 30 * runAttempts;
+            if (oddsEscape > 255 || oddsEscape > rand() % 256)
+            {
+                return; // battle ends
+            }
+        }
+        else
+        {
+            return;
+        }
         break;
     }
 
@@ -83,17 +100,17 @@ void battle()
     case (SWITCH):
         break;
     case (ITEM):
-        playerUseItem((item *)player_move.subject);
+        opponentUseItem((item *)player_move.subject);
         break;
     case (MOVE):
         // use opponent move
-        useMove(opponent_active, player_active, *(move *)opponent_move.subject);
+        outcome = useMove(opponent_active, player_active, *(move *)opponent_move.subject);
         break;
     }
     if (!player_first && player_move.selection == MOVE)
     {
         // use player move
-        useMove(player_active, opponent_active, *(move *)player_move.subject);
+        outcome = useMove(player_active, opponent_active, *(move *)player_move.subject);
     }
     battle();
 }

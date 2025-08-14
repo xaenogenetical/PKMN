@@ -1,14 +1,27 @@
 #include <map>
 #include <cstring>
 #include <vector>
+#include <iostream>
+#pragma once
 
+#define graphicsSquare std::vector<std::vector<int>>
+#define SCREEN_SIZE_X 160
+#define SCREEN_SIZE_Y 144
+
+#define bit bool
+#define bitstream bit *
+#define modifiedStat(stage) statMods[stage + 6]
+#define playerUseItem(it) useItem(0, it);
+#define opponentUseItem(it) useItem(1, it);
 enum stats
 {
       hp,
       attack,
       defense,
       special,
-      speed
+      speed,
+      accuracy,
+      evasion
 };
 
 enum matchup
@@ -43,21 +56,24 @@ enum status
       poison,
       freeze,
       atk_up,
-      atk_dwn,
       def_up,
-      def_dwn,
       speed_up,
-      speed_dwn,
       spec_up,
-      spec_dwn,
       acc_up,
+      eva_up,
+      atk_dwn,
+      def_dwn,
+      speed_dwn,
+      spec_dwn,
       acc_dwn,
+      eva_dwn
 };
 
 struct move_effect
 {
       int chance;
       status change;
+      int severity; // for drastic stat changes and such
       bool target;
 };
 
@@ -75,13 +91,15 @@ struct move
       move_effect effect;
 };
 
+int statMods[] = {25, 28, 33, 40, 50, 66, 100, 150, 200, 250, 300, 350, 400};
+
 class pokemon
 {
+private:
 public:
       static move learnSet[];
       static int baseStats[];
-      int id_num;
-      int dex_num;
+      void *sprite;
       type type1;
       type type2;
 
@@ -91,13 +109,89 @@ public:
       int IVs[5];
       int EVs[5];
 
-      int statChanges[6];
+      char *name;
+      char *species;
+
+      int statChanges[7];
 
       status affliction;
 
       int currHP;
+      int maxHP;
 
-      int stats[5];
+      int stat_vals[5];
+
+      pokemon(int dexNum)
+      {
+      }
+
+      bool isFainted()
+      {
+            return currHP <= 0;
+      }
+
+      void level_up()
+      {
+            level++;
+            /*increment stats*/
+      }
+
+      void heal()
+      {
+            currHP = maxHP;
+      }
+
+      void apply_status(status change)
+      {
+            if (change <= freeze)
+            {
+                  affliction = change;
+                  return;
+            }
+            else
+            {
+            lap:
+                  int ind;
+                  if (change < atk_dwn) // buff
+                  {
+                        ind = change - atk_up;
+                        statChanges[ind] = statChanges[ind] < 6 ? statChanges[ind] + 1 : statChanges[ind];
+                  }
+                  else // debuff
+                  {
+                        ind = change - atk_dwn;
+                        statChanges[ind] = statChanges[ind] > -6 ? statChanges[ind] - 1 : statChanges[ind];
+                  }
+            }
+      }
+
+      int fetchReal(stats stat)
+      {
+            int val;
+            if (stat < accuracy)
+            {
+                  val = stat_vals[stat] * (((double)modifiedStat(statChanges[stat])) / 100.0);
+                  switch (stat)
+                  {
+                  case attack:
+                        if (affliction == burn)
+                        {
+                              val >>= 1; // same as halving
+                        }
+                        break;
+                  case speed:
+                        if (affliction == paralyze)
+                        {
+                              val /= 3;
+                        }
+                        break;
+                  }
+            }
+      }
+
+      ~pokemon()
+      {
+      }
 };
 
 class trainer
@@ -106,71 +200,76 @@ class trainer
 };
 extern pokemon player_active;
 extern pokemon opponent_active;
-void handle_effect(move &mv)
-{
-      if (rand() % 100 > mv.effect.chance)
-      {
-            return;
-      }
-      if (mv.effect.target) // i have decided that true = opp and false = user
-      {
-            (mv.effect.target ? opponent_active : player_active).apply_status(mv.effect.change);
-      }
-}
 
-int damage_calculation(pokemon &attacker, pokemon &defender, move &mv) // weird formatting here is due to my formatter hating really lengthy equations
-{
-      bool crit = (rand() % 256) < (attacker.baseStats[speed] / 2);
-      int damage = ((((2 * attacker.level * (crit ? 2 : 1) / 5) + 2) *
-                     mv.power *
-                     (mv.physical ? attacker.stats[attack] : attacker.stats[special] / mv.physical ? defender.stats[defense]
-                                                                                                   : defender.stats[special]) /
-                     50) +
-                    2) *
-                   (mv.type == attacker.type1 || mv.type == attacker.type2 ? 1.5 : 1) * ((defender.type1.type_matchup_incoming[mv.type] == super_effective) ? 2 : (defender.type1.type_matchup_incoming[mv.type] == not_very_effective ? 0.5 : 1)) *
-                   ((defender.type2.type_matchup_incoming[mv.type] == super_effective) ? 2 : (defender.type2.type_matchup_incoming[mv.type] == not_very_effective ? 0.5 : 1)) * (((rand() % (38)) + 217) / 255);
-      return damage < 1 ? 1 : damage;
-}
+void handle_effect(move &mv);
+
+int damage_calculation(pokemon &attacker, pokemon &defender, move &mv);
 
 struct item
 {
 };
 
-#define playerUseItem(item) useItem(0, item);
-#define opponentUseItem(item) useItem(1, item);
-bool useItem(bool, item *) {}
+bool useItem(bool, item *);
+
 enum moveOutcomes
 {
       NO_PP,
       NOEFFECT,
       MISS,
-      HIT
+      N_V_EFF = not_very_effective,
+      HIT,
+      S_EFF
 };
-int useMove(pokemon &attacker, pokemon &defender, move &mv)
+int useMove(pokemon &attacker, pokemon &defender, move &mv);
+
+int cursorTopLeftX;
+int cursorTopLeftY;
+extern int **TheScreenTM;
+
+void incrementCursor()
 {
-      if (mv.currPP <= 0)
+      cursorTopLeftX++;
+      if (cursorTopLeftX > SCREEN_SIZE_X / 7)
       {
-            return NO_PP;
-      }
-      mv.currPP--;
-      if (mv.type.type_matchup_outgoing.at(defender.type1) == immune || mv.type.type_matchup_outgoing.at(defender.type2) == immune)
-      {
-            return NOEFFECT;
-      }
-      if (mv.accuracy < rand() % 101)
-      {
-            return MISS;
-      }
-      if (mv.attacking)
-      {
-            defender.currHP -= damage_calculation(attacker, defender, mv);
-            handle_effect(mv);
-            return HIT;
+            cursorTopLeftX = 0;
+            cursorTopLeftY++;
+            if (cursorTopLeftY > SCREEN_SIZE_Y / 7)
+            {
+                  cursorTopLeftX = 0;
+                  cursorTopLeftY = 0;
+            }
       }
 }
 
-// graphic data for every "tile", indexed with their corresponding name
-std::map<char *, std::vector<std::vector<int>>> tile_list = {
+void setTileAtCursorTo(graphicsSquare tile)
+{
+      for (int row = 0; row < tile.size(); row++)
+      {
+            for (int col = 0; col < tile.at(row).size(); col++)
+            {
+                  TheScreenTM[row + (cursorTopLeftX * 7)][col + (cursorTopLeftY * 7)] = tile.at(row).at(col);
+            }
+      }
+}
+
+void printText(char *msg)
+{
+      char holder[1];
+      char *local_msg = msg;
+loop_top:
+      if (!local_msg)
+      {
+            return;
+      }
+      holder[0] = *local_msg++;
+      // move cursor to correct location
+      setTileAtCursorTo(tile_list.at(holder));
+      incrementCursor();
+      goto loop_top;
+}
+
+// graphics data for every "tile", indexed with their corresponding name
+std::map<char *, graphicsSquare> tile_list = {
     {"PK", {{1, 1, 1, 0, 0, 0, 0},
 
             {1, 0, 1, 0, 0, 0, 0},

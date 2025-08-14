@@ -52,6 +52,11 @@ public:
         if (change >= freeze)
         {
             affliction = change;
+            return;
+        }
+        else
+        {
+            int ind = change - freeze;
         }
     }
 
