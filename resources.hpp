@@ -252,10 +252,27 @@ void setTileAtCursorTo(graphicsSquare tile)
       }
 }
 
+#define placeCursorAt(x, y) \
+      cursorTopLeftX = x;   \
+      cursorTopLeftY = y;
+
+#define printTextBoxBorder()                            \
+      setTileAtCursorTo(tile_list.at("box_corner_tl")); \
+      incrementCursor();                                \
+      for (int lr = 0; lr < SCREEN_SIZE_X - 2; lr++)    \
+      {                                                 \
+            setTileAtCursorTo(tile_list.at("box_top")); \
+            incrementCursor();                          \
+      }                                                 \
+      setTileAtCursorTo(tile_list.at("box_corner_tr"))
+
 void printText(char *msg)
 {
       char holder[1];
       char *local_msg = msg;
+      placeCursorAt(0, 0);
+      printTextBoxBorder();
+
 loop_top:
       if (!local_msg)
       {
@@ -1803,6 +1820,86 @@ std::map<char *, graphicsSquare> tile_list = {
                        {0, 0, 0, 1, 0, 0, 1}
 
                       }
+
+    },
+
+    {"box_top", {{1, 1, 0, 1, 1, 0, 0},
+
+                 {1, 0, 1, 0, 1, 0, 0},
+
+                 {1, 0, 0, 0, 1, 0, 0},
+
+                 {1, 0, 0, 0, 1, 0, 0},
+
+                 {1, 0, 0, 1, 0, 0, 1},
+
+                 {0, 0, 0, 1, 1, 0, 1},
+
+                 {0, 0, 0, 1, 0, 1, 1},
+
+                 {0, 0, 0, 1, 0, 0, 1}
+
+                }
+
+    },
+
+    {"box_left", {{1, 1, 0, 1, 1, 0, 0},
+
+                  {1, 0, 1, 0, 1, 0, 0},
+
+                  {1, 0, 0, 0, 1, 0, 0},
+
+                  {1, 0, 0, 0, 1, 0, 0},
+
+                  {1, 0, 0, 1, 0, 0, 1},
+
+                  {0, 0, 0, 1, 1, 0, 1},
+
+                  {0, 0, 0, 1, 0, 1, 1},
+
+                  {0, 0, 0, 1, 0, 0, 1}
+
+                 }
+
+    },
+
+    {"box_right", {{1, 1, 0, 1, 1, 0, 0},
+
+                   {1, 0, 1, 0, 1, 0, 0},
+
+                   {1, 0, 0, 0, 1, 0, 0},
+
+                   {1, 0, 0, 0, 1, 0, 0},
+
+                   {1, 0, 0, 1, 0, 0, 1},
+
+                   {0, 0, 0, 1, 1, 0, 1},
+
+                   {0, 0, 0, 1, 0, 1, 1},
+
+                   {0, 0, 0, 1, 0, 0, 1}
+
+                  }
+
+    },
+
+    {"box_bottom", {{1, 1, 0, 1, 1, 0, 0},
+
+                    {1, 0, 1, 0, 1, 0, 0},
+
+                    {1, 0, 0, 0, 1, 0, 0},
+
+                    {1, 0, 0, 0, 1, 0, 0},
+
+                    {1, 0, 0, 1, 0, 0, 1},
+
+                    {0, 0, 0, 1, 1, 0, 1},
+
+                    {0, 0, 0, 1, 0, 1, 1},
+
+                    {0, 0, 0, 1, 0, 0, 1}
+
+                   }
 
     },
 };
