@@ -1,66 +1,102 @@
 #include "resources.hpp"
 
-class pokemon
+pokemon::pokemon()
 {
-private:
-public:
-    static move learnSet[];
-    static int baseStats[];
-    void *sprite;
-    type type1;
-    type type2;
+}
 
-    char sex;
-    move knownMoves[4];
-    int level;
-    int IVs[5];
-    int EVs[5];
+pokemon::pokemon(int dexNum)
+{
+}
 
-    char *species;
+bool pokemon::isFainted()
+{
+    return currHP <= 0;
+}
 
-    int statChanges[6];
+void pokemon::level_up()
+{
+    level++;
+}
 
-    status affliction;
+int pokemon::determineStat(stats stat)
+{
+}
 
-    int currHP;
-    int maxHP;
+int pokemon::fetchReal(stats stat)
+{
+}
 
-    int stats[5];
+void pokemon::heal()
+{
+    currHP = maxHP;
+}
 
-    pokemon(int dexNum)
+void pokemon::apply_status(status change)
+{
+    if (change <= freeze)
     {
+        affliction = change;
+        return;
     }
-
-    bool isFainted()
+    else
     {
-        return currHP <= 0;
+        int ind = change - freeze;
     }
+}
 
-    void level_up()
-    {
-        level++;
-        /*increment stats*/
-    }
+pokemon::~pokemon()
+{
+}
 
-    void heal()
+void incrementCursor()
+{
+    if (++cursorTopLeftX > SCREEN_SIZE_X_BOX)
     {
-        currHP = maxHP;
-    }
-
-    void apply_status(status change)
-    {
-        if (change >= freeze)
+        cursorTopLeftX = 0;
+        if (++cursorTopLeftY > SCREEN_SIZE_Y_BOX)
         {
-            affliction = change;
-            return;
-        }
-        else
-        {
-            int ind = change - freeze;
+            cursorTopLeftX = 0;
+            cursorTopLeftY = 0;
         }
     }
+}
 
-    ~pokemon()
+void setTileAtCursorTo(graphicsSquare tile)
+{
+    for (int row = 0; row < tile.size(); row++)
     {
+        for (int col = 0; col < tile.at(row).size(); col++)
+        {
+            TheScreenTM[row + (cursorTopLeftX * 7)][col + (cursorTopLeftY * 7)] = tile.at(row).at(col);
+        }
     }
-};
+}
+
+void printText(char *msg)
+{
+    char holder[1];
+    char *local_msg = msg;
+    placeCursorAt(0, 0);
+    printTextBoxBorder();
+
+loop_top:
+    if (!local_msg)
+    {
+        return;
+    }
+    holder[0] = *local_msg++;
+    // move cursor to correct location
+    setTileAtCursorTo(tile_list.at(holder));
+    incrementCursor();
+    while (cursorTopLeftX == 0 || cursorTopLeftX == 10)
+    { // TODO: GET REAL
+        incrementCursor();
+    }
+    if (cursorTopLeftX == SCREEN_SIZE_X_BOX - 1 && cursorTopLeftY == SCREEN_SIZE_Y_BOX - 1)
+    {
+        setTileAtCursorTo(tile_list.at("selector_arrow"));
+        getchar();
+        clearTextBox();
+    }
+    goto loop_top;
+}

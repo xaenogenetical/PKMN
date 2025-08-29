@@ -1,162 +1,51 @@
 #include "resources.hpp"
 #include <iostream>
 
-#define fight 0
-#define pkmn 1
-#define battle_item 2
-#define run 3
-
 bool lame_graphics = 0;
 
 trainer player;
 
-enum mv_t
+void draw()
 {
-    MOVE,
-    ITEM,
-    SWITCH,
-    RUN
-};
-
-struct action
-{
-    mv_t selection;
-    void *subject;
-};
+    std::cout << "\033[0;0H";
+    renderScreen();
+}
 
 item bag[];
-
+gameState state;
 int main(int argc, char const *argv[])
 {
     srand(NULL);
-    return 0;
+    // playIntroVid();
+    while (true)
+    { // doing it this way ensures that each game state returns before entering the next, switching between states inside of each one would eventually overflow the stack
+        switch (state)
+        {
+        case overworld:
+            break;
+        case encounter:
+            break;
+        case trainer_spot:
+            break;
+        case battling:
+            break;
+        case exiting:
+            return;
+        }
+    }
+    return 1;
 }
 
 bool trainer_battle;
 pokemon player_active;
 pokemon opponent_active;
+trainer opp;
 
 action player_move;
 action opponent_move;
 
-struct tile
-{
-    int graphicsData[7][7];
-};
-
 int TheScreenTM[SCREEN_SIZE_X][SCREEN_SIZE_Y];
 
-void battle()
-{
-    player_turn();
-    // determine enemy move
-    // calc turn order
-    bool player_first = player_active.fetchReal(speed) > opponent_active.fetchReal(speed) ? true : (player_active.fetchReal(speed) == opponent_active.fetchReal(speed) ? rand() % 2 : false);
-    // execute moves
-    int outcome;
-    int runAttempts = 0;
-    switch (player_move.selection)
-    {
-    case (SWITCH):
-        break;
-    case (ITEM):
-        playerUseItem((item *)player_move.subject);
-        break;
-    case (MOVE):
-        if (player_first)
-        {
-            // use player move
-            outcome = useMove(player_active, opponent_active, *(move *)player_move.subject);
-            if (outcome == NO_PP)
-            {
-                std::cout << "NO PP" << std::endl;
-            }
-        }
-        break;
-    case (RUN):
-        if (trainer_battle)
-        {
-            std::cout << "Cannot run away!" << std::endl;
-            // go back to player turn
-        }
-        runAttempts++;
-        if (player_active.fetchReal(speed) < opponent_active.fetchReal(speed))
-        {
-            int oddsEscape = ((player_active.fetchReal(speed) * 32) / ((opponent_active.fetchReal(speed) / 4) % 256)) + 30 * runAttempts;
-            if (oddsEscape > 255 || oddsEscape > rand() % 256)
-            {
-                return; // battle ends
-            }
-        }
-        else
-        {
-            return;
-        }
-        break;
-    }
-
-    switch (opponent_move.selection)
-    {
-    case (SWITCH):
-        break;
-    case (ITEM):
-        opponentUseItem((item *)player_move.subject);
-        break;
-    case (MOVE):
-        // use opponent move
-        outcome = useMove(opponent_active, player_active, *(move *)opponent_move.subject);
-        break;
-    }
-    if (!player_first && player_move.selection == MOVE)
-    {
-        // use player move
-        outcome = useMove(player_active, opponent_active, *(move *)player_move.subject);
-    }
-    battle();
-}
-
-void player_turn()
-{
-turn_start:
-    int choice = getchar();
-    if (choice == fight)
-    {
-        int mv = 0;
-        while (true)
-        {
-            char inp = getchar();
-            if (inp == 'e') // enter
-            {
-                break;
-            }
-            // change mv
-        }
-        // load move into their todo
-        void *todo = &player_active.knownMoves[mv];
-    }
-    if (choice == pkmn)
-    {
-        // show_party_screen();
-        // user select
-        // load switch into their todo
-    }
-    if (choice == battle_item)
-    {
-        // show bag
-        // user select
-        // lode move into their todo
-    }
-    if (choice == run)
-    {
-        if (trainer_battle)
-        {
-            std::cout << "Cannot run away!" << std::endl;
-            goto turn_start;
-        }
-        std::cout << "You ran away!" << std::endl;
-        return;
-    }
-}
 // assumes input data is properly formatted, does no checking of its own
 sprite decompress_sprite_data(bitstream data)
 {
